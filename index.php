@@ -25,7 +25,8 @@
 	$new_logs = array();
 
 	$logs = fopen('logs.csv', 'r');
-	//$count = 0;
+	
+	$count = 0;
 
 	while (($line = fgetcsv($logs)) !== FALSE){
 		foreach ($line AS $key => $el) {
@@ -41,7 +42,8 @@
 					'log' => $line[1]
 				];
 
-				//if ($count > 330 && $count < 360){
+				//The line below will gather that data between the two values.
+				//if ($count > 0 && $count < 100){
 
 					$url = 'http://ip-api.com/json/'. $explode[0];
 					$ch = curl_init();
@@ -69,7 +71,7 @@
 					//Horrific method, however haven't got premium access to the API key.
 					sleep(1);
 				//} 
-				//$count += 1;
+				$count++;
 
 				
 			}
@@ -100,5 +102,4 @@
 		}
 
 
-echo $table;
-die();
+die($table)
