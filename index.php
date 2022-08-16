@@ -102,4 +102,4 @@
 		}
 
 
-die($table)
+die($table);
