@@ -100,6 +100,7 @@
 			$table .= '<td class="bordered">' . $data['source_coords'] . '</td>';
 			$table .= '</tr>';
 		}
+	$table .= '<table>';
 
 
 die($table);
