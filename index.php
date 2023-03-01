@@ -1,32 +1,22 @@
-<style>
-	.bordered {
-		border: solid black;
-	}
-
-	table {
-		border-collapse: collapse;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	th {
-		font-size: 150%;
-	}
-
-	td {
-		text-align: center;
-		font-size: 145%;
-	}
-</style>
-
 <?php 
 
-	$new_logs = array();
+	const IP_API_URL = 'http://ip-api.com/json/';
+	const IP_CACHE_FILE = 'ip_cache.json';
+	const IP_LOG = 'logs.csv';
 
-	$logs = fopen('logs.csv', 'r');
-	
-	$count = 0;
+	$ip_cache = array();
+
+	if (file_exists(API_CACHE_FILE)){
+		$ip_cache = json_decode(file_get_contents(API_CACHE_FILE), true);
+	}
+
+	if (file_exists(IP_LOG)){
+		while (($line = fgetcsv(IP_LOG)) !== FALSE){
+			die(print_r($line));
+		}
+	}
+
+	/*
 
 	while (($line = fgetcsv($logs)) !== FALSE){
 		foreach ($line AS $key => $el) {
@@ -45,7 +35,7 @@
 				//The line below will gather that data between the two values.
 				//if ($count > 0 && $count < 100){
 
-					$url = 'http://ip-api.com/json/'. $explode[0];
+					$url = IP_API_URL . $explode[0];
 					$ch = curl_init();
 					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 					curl_setopt($ch, CURLOPT_URL,$url);
@@ -76,31 +66,6 @@
 				
 			}
 		}
-	}
-	
-	$table = '<table>';
-		$table .= '<tr>';
-			$table .= '<th>Date Time</th>';
-			$table .= '<th>Source Attacker</th>';
-			$table .= '<th>Region</th>';
-			$table .= '<th>Country</th>';
-			$table .= '<th>City</th>';
-			$table .= '<th>ZIP/Postal Code</th>';
-			$table .= '<th>Coordinates</th>';
-		$table .= '</tr>';
 		
-		foreach ($new_logs AS $key => $data){
-			$table .= '<tr>';
-			$table .= '<td class="bordered">' . $data['date'] . ' - ' . $data['time'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_ip'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_region'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_country'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_city'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_zip'] .  '</td>';
-			$table .= '<td class="bordered">' . $data['source_coords'] . '</td>';
-			$table .= '</tr>';
-		}
-	$table .= '</table>';
-
-
-die($table);
+	}
+	*/
