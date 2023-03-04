@@ -1,4 +1,7 @@
 <?php 
+    
+	use GuzzleHttp\Client;
+	require_once 'vendor/autoload.php';
 
 	const IP_API_URL = 'http://ip-api.com/json/';
 	const IP_CACHE_FILE = 'ip_cache.json';
@@ -6,7 +9,7 @@
 
 	$ip_cache = array();
 	
-	$extracted_data = array();
+	$extracted_logs = array();
 
 	if (file_exists(IP_CACHE_FILE)){
 		$ip_cache = json_decode(file_get_contents(IP_CACHE_FILE), true);
@@ -28,11 +31,11 @@
 						$explode = explode('SRC=', $line[1]);
 						$explode = explode(' ', $explode[1]);
 
-						$extracted_data[] = [
+						$extracted_logs[] = [
 							'time' => $line[0],
 							'date' => substr($line[1], 0,7),
-							'source_ip' => $explode[0],
-							'log' => $line[1]
+							'attacker_ip' => $explode[0],
+							'log' => $line[0] . $line[1]
 						];
 
 					}
@@ -49,6 +52,27 @@
 	} else {
 		echo "The file was not found or not readable: " . IP_LOG_FILE;
 	}
+
+	if (class_exists('\GuzzleHttp\Client')){
+		foreach ($extracted_logs AS $key => $log){
+
+			$url = IP_API_URL . $log['attacker_ip'];
+			$client = new Client();
+			$response = $client->request('GET', $url);
+			$result = $response->getBody()->getContents();
+
+			$get_source_ip_info = json_decode($result);
+			
+			$extracted_logs[$key] += [
+				'source_region' => $get_source_ip_info->regionName,
+				'source_country' => $get_source_ip_info->country,
+				'source_city' => $get_source_ip_info->city,
+				'source_zip' => $get_source_ip_info->zip,
+				'source_coords' => $get_source_ip_info->lat . ', ' . $get_source_ip_info->lon
+			];
+		}
+	}
+
 
 	/*
 
