@@ -2,18 +2,52 @@
 
 	const IP_API_URL = 'http://ip-api.com/json/';
 	const IP_CACHE_FILE = 'ip_cache.json';
-	const IP_LOG = 'logs.csv';
+	const IP_LOG_FILE = 'logs.csv';
 
 	$ip_cache = array();
+	
+	$extracted_data = array();
 
-	if (file_exists(API_CACHE_FILE)){
-		$ip_cache = json_decode(file_get_contents(API_CACHE_FILE), true);
+	if (file_exists(IP_CACHE_FILE)){
+		$ip_cache = json_decode(file_get_contents(IP_CACHE_FILE), true);
 	}
 
-	if (file_exists(IP_LOG)){
-		while (($line = fgetcsv(IP_LOG)) !== FALSE){
-			die(print_r($line));
+	if (file_exists(IP_LOG_FILE) && is_readable(IP_LOG_FILE)){
+
+		$handle = fopen(IP_LOG_FILE, 'r');
+
+		if ($handle !== FALSE) {
+
+			while (($line = fgetcsv($handle)) !== FALSE){
+
+				//Search the CSV row for 'DoS'.
+				foreach ($line AS $key => $value){
+
+					if (str_contains($value, 'DoS')){
+
+						$explode = explode('SRC=', $line[1]);
+						$explode = explode(' ', $explode[1]);
+
+						$extracted_data[] = [
+							'time' => $line[0],
+							'date' => substr($line[1], 0,7),
+							'source_ip' => $explode[0],
+							'log' => $line[1]
+						];
+
+					}
+				}
+
+			}
+
+			fclose($handle);
+
+		} else {
+			echo "Error opening file: " . IP_LOG_FILE;
 		}
+
+	} else {
+		echo "The file was not found or not readable: " . IP_LOG_FILE;
 	}
 
 	/*
