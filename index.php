@@ -8,7 +8,6 @@
 	const IP_LOG_FILE = 'logs.csv';
 
 	$ip_cache = array();
-	
 	$extracted_logs = array();
 
 	if (file_exists(IP_CACHE_FILE)){
@@ -22,7 +21,7 @@
 		if ($handle !== FALSE) {
 
 			while (($line = fgetcsv($handle)) !== FALSE){
-
+					
 				//Search the CSV row for 'DoS'.
 				foreach ($line AS $key => $value){
 
@@ -43,6 +42,65 @@
 
 			}
 
+			if (class_exists('\GuzzleHttp\Client')){
+				foreach ($extracted_logs as $key => $log){
+					
+					$attacker_ip = $log['attacker_ip'];
+			
+					// check if the cache file exists
+					if (file_exists(IP_CACHE_FILE)) {
+						// read the contents of the cache file and decode the JSON string
+						$cache_data = json_decode(file_get_contents(IP_CACHE_FILE), true);
+			
+						// check if the IP address is in the cache
+						if (isset($cache_data[$attacker_ip])) {
+							// retrieve the cached information
+							$cached_info = $cache_data[$attacker_ip];
+			
+							// use the cached information
+							$extracted_logs[$key] += [
+								'source_region' => $cached_info['regionName'],
+								'source_country' => $cached_info['country'],
+								'source_city' => $cached_info['city'],
+								'source_zip' => $cached_info['zip'],
+								'source_coords' => $cached_info['lat'] . ', ' . $cached_info['lon']
+							];
+							
+							continue; // skip fetching new information
+						}
+					}
+			
+					// fetch new information
+					$url = IP_API_URL . $attacker_ip;
+					$client = new Client();
+					$response = $client->request('GET', $url);
+					$result = $response->getBody()->getContents();
+			
+					$get_source_ip_info = json_decode($result);
+					
+					$extracted_logs[$key] += [
+						'source_region' => $get_source_ip_info->regionName,
+						'source_country' => $get_source_ip_info->country,
+						'source_city' => $get_source_ip_info->city,
+						'source_zip' => $get_source_ip_info->zip,
+						'source_coords' => $get_source_ip_info->lat . ', ' . $get_source_ip_info->lon
+					];
+			
+					// cache the new information
+					$cache_data[$attacker_ip] = [
+						'regionName' => $get_source_ip_info->regionName,
+						'country' => $get_source_ip_info->country,
+						'city' => $get_source_ip_info->city,
+						'zip' => $get_source_ip_info->zip,
+						'lat' => $get_source_ip_info->lat,
+						'lon' => $get_source_ip_info->lon
+					];
+					file_put_contents(IP_CACHE_FILE, json_encode($cache_data));
+				}
+			} else {
+				echo 'Guzzle is not installed.';
+			}
+
 			fclose($handle);
 
 		} else {
@@ -53,77 +111,4 @@
 		echo "The file was not found or not readable: " . IP_LOG_FILE;
 	}
 
-	if (class_exists('\GuzzleHttp\Client')){
-		foreach ($extracted_logs AS $key => $log){
 
-			$url = IP_API_URL . $log['attacker_ip'];
-			$client = new Client();
-			$response = $client->request('GET', $url);
-			$result = $response->getBody()->getContents();
-
-			$get_source_ip_info = json_decode($result);
-			
-			$extracted_logs[$key] += [
-				'source_region' => $get_source_ip_info->regionName,
-				'source_country' => $get_source_ip_info->country,
-				'source_city' => $get_source_ip_info->city,
-				'source_zip' => $get_source_ip_info->zip,
-				'source_coords' => $get_source_ip_info->lat . ', ' . $get_source_ip_info->lon
-			];
-		}
-	}
-
-
-	/*
-
-	while (($line = fgetcsv($logs)) !== FALSE){
-		foreach ($line AS $key => $el) {
-			if (str_contains($el, 'DoS')){
-
-				$explode = explode('SRC=', $line[1]);
-				$explode = explode(' ', $explode[1]);
-
-				$new_log_temp = [
-					'time' => $line[0],
-					'date' => substr($line[1], 0,7),
-					'source_ip' => $explode[0],
-					'log' => $line[1]
-				];
-
-				//The line below will gather that data between the two values.
-				//if ($count > 0 && $count < 100){
-
-					$url = IP_API_URL . $explode[0];
-					$ch = curl_init();
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-					curl_setopt($ch, CURLOPT_URL,$url);
-					$result=curl_exec($ch);
-					curl_close($ch);
-
-					$get_source_ip_info = json_decode($result);
-
-					$new_log_temp = [
-						'time' => $line[0],
-						'date' => substr($line[1], 0,7),
-						'source_ip' => $explode[0],
-						'log' => $line[1],
-						'source_region' => $get_source_ip_info->regionName,
-						'source_country' => $get_source_ip_info->country,
-						'source_city' => $get_source_ip_info->city,
-						'source_zip' => $get_source_ip_info->zip,
-						'source_coords' => $get_source_ip_info->lat . ', ' . $get_source_ip_info->lon
-					];
-					
-					array_push($new_logs, $new_log_temp);
-
-					//Horrific method, however haven't got premium access to the API key.
-					sleep(1);
-				//} 
-				$count++;
-
-				
-			}
-		}
-		
-	}
-	*/
