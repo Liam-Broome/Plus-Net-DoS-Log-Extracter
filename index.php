@@ -47,17 +47,17 @@
 					
 					$attacker_ip = $log['attacker_ip'];
 			
-					// check if the cache file exists
+					//Check if the cache file exists.
 					if (file_exists(IP_CACHE_FILE)) {
 						// read the contents of the cache file and decode the JSON string
 						$cache_data = json_decode(file_get_contents(IP_CACHE_FILE), true);
 			
-						// check if the IP address is in the cache
+						//Check if the IP address is in the cache.
 						if (isset($cache_data[$attacker_ip])) {
-							// retrieve the cached information
+							//Retrieve the cached information.
 							$cached_info = $cache_data[$attacker_ip];
 			
-							// use the cached information
+							//Use the cached information.
 							$extracted_logs[$key] += [
 								'source_region' => $cached_info['regionName'],
 								'source_country' => $cached_info['country'],
@@ -66,11 +66,11 @@
 								'source_coords' => $cached_info['lat'] . ', ' . $cached_info['lon']
 							];
 							
-							continue; // skip fetching new information
+							continue; //Skip fetching new information.
 						}
 					}
 			
-					// fetch new information
+					//Fetch new information.
 					$url = IP_API_URL . $attacker_ip;
 					$client = new Client();
 					$response = $client->request('GET', $url);
@@ -86,7 +86,7 @@
 						'source_coords' => $get_source_ip_info->lat . ', ' . $get_source_ip_info->lon
 					];
 			
-					// cache the new information
+					//Cache the new information.
 					$cache_data[$attacker_ip] = [
 						'regionName' => $get_source_ip_info->regionName,
 						'country' => $get_source_ip_info->country,
